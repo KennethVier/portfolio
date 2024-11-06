@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="/css/styles.css"> <!-- Link to a CSS file if needed -->
+</head>
+<body>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+
+        <p>Don't have an account? <a th:href="@{/register}">Register here</a></p>
+    </div>
+</body>
+</html>
+package com.example.portfolio.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        
+        // Disabling CSRF for simplicity (use with caution in production)
+        http.csrf(csrf -> csrf.disable());
+        
+        // Configure role-based access
+        http.authorizeHttpRequests(requests -> 
+            requests
+                .antMatchers("/admin/**").hasRole("ADMIN")   // Admin-only access
+                .antMatchers("/user/**").hasRole("USER")     // User-only access
+                .antMatchers("/register").permitAll()        // Allow anyone to access the register page
+                .antMatchers("/login").permitAll()           // Allow anyone to access the login page
+                .anyRequest().authenticated()                // Other requests need authentication
+        );
+        
+        // Custom login page configuration
+        http.formLogin(form -> 
+            form
+                .loginPage("/login")                        // Set custom login page
+                .defaultSuccessUrl("/", true)               // Redirect after successful login
+                .permitAll()
+        );
+        
+        // Allow users to access a custom registration page
+        http.formLogin().permitAll();
+        
+        return http.build();
+    }
+}
+
